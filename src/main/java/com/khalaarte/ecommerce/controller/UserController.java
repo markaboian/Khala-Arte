@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
 import java.util.Set;
 
 @RestController
@@ -60,6 +59,6 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteUserById(@PathVariable Long id) {
         userService.deleteUser(id);
-        return new ResponseEntity<>("User with the id of: " + id + " deleted successfully.", HttpStatus.ACCEPTED);
+        return new ResponseEntity<>("User with the id of: " + id + " was deleted successfully.", HttpStatus.ACCEPTED);
     }
 }
