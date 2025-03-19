@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: khala-arte
+  datasource:
+    url: jdbc:mysql://localhost:3306/khala-arte
+    username: root
+    password: mceastermako2002
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    open-in-view: false
