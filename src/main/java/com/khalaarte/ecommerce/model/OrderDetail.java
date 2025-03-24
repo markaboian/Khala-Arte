@@ -4,20 +4,22 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
-@Entity
-@Table(name = "Product")
 @Data
-public class Product {
+@Entity
+@Table(name = "order_detail")
+public class OrderDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String name;
-    private String description;
-    private Double price;
-    private boolean isAvailable = true;
 
     @ManyToOne
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "order_id", nullable = false)
     @JsonBackReference
-    private Category category;
+    private Order order;
+
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
+
+    private Double unitPrice;
 }

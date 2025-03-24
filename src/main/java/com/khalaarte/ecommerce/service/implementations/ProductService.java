@@ -60,7 +60,7 @@ public class ProductService implements IProductService {
         existingProduct.setDescription(product.getDescription());
         existingProduct.setPrice(product.getPrice());
         existingProduct.setCategory(category);
-        existingProduct.setAvailable(product.getAvailable());
+        existingProduct.setAvailable(product.isAvailable());
 
         return productRepository.save(existingProduct);
     }
