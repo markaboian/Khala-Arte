@@ -1,9 +1,7 @@
 package com.khalaarte.ecommerce.service.implementations;
 
-import com.khalaarte.ecommerce.model.Order;
-import com.khalaarte.ecommerce.model.OrderDetail;
-import com.khalaarte.ecommerce.model.Product;
-import com.khalaarte.ecommerce.model.User;
+import com.khalaarte.ecommerce.model.*;
+import com.khalaarte.ecommerce.repository.ICartRepository;
 import com.khalaarte.ecommerce.repository.IOrderRepository;
 import com.khalaarte.ecommerce.repository.IProductRepository;
 import com.khalaarte.ecommerce.repository.IUserRepository;
@@ -29,6 +27,9 @@ public class OrderService implements IOrderService {
     @Autowired
     private IProductRepository productRepository;
 
+    @Autowired
+    private ICartRepository cartRepository;
+
     @Override
     public Optional<Order> getOrderById(Long id) {
         return orderRepository.findById(id);
@@ -42,43 +43,35 @@ public class OrderService implements IOrderService {
     @Override
     @Transactional
     public Order createOrder(Long userId, List<Long> productIds) {
-        // Find User
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Create order
         Order order = new Order();
         order.setUser(user);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus("PENDING");
 
-        // Create order detail of the product
         List<OrderDetail> orderDetails = new ArrayList<>();
         for (Long productId : productIds) {
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new RuntimeException("Product not found."));
 
-            // Validate the product is not sold
             if (!product.isAvailable()) {
                 throw new RuntimeException("The product " + product.getName() + " is already sold.");
             }
 
-            // Create the OrderDetail
             OrderDetail detail = new OrderDetail();
             detail.setOrder(order);
             detail.setProduct(product);
             detail.setUnitPrice(product.getPrice());
             orderDetails.add(detail);
 
-            // Set product availability false
             product.setAvailable(false);
         }
 
-        // Assign the details to the order and calculate the total
         order.setOrderDetails(orderDetails);
         order.calculateTotal();
 
-        // Save the order (and the details thanks to the Cascade)
         return orderRepository.save(order);
     }
 
@@ -135,5 +128,47 @@ public class OrderService implements IOrderService {
     @Override
     public void deleteOrderById(Long id) {
         orderRepository.deleteById(id);
+    }
+
+    @Transactional
+    public Order createOrderFromCart(Long userId) {
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Cart not found for user " + userId));
+
+        if (cart.getCartItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+        Order order = new Order();
+        order.setUser(cart.getUser());
+        order.setOrderDate(LocalDateTime.now());
+        order.setStatus("PENDING");
+
+        List<OrderDetail> orderDetails = new ArrayList<>();
+        for (CartItem cartItem : cart.getCartItems()) {
+            Product product = cartItem.getProduct();
+            if (!product.isAvailable()) {
+                throw new RuntimeException("The product " + product.getName() + " is already sold.");
+            }
+
+            OrderDetail detail = new OrderDetail();
+            detail.setOrder(order);
+            detail.setProduct(product);
+            detail.setUnitPrice(product.getPrice());
+
+            orderDetails.add(detail);
+
+            product.setAvailable(false);
+            productRepository.save(product);
+        }
+
+        order.setOrderDetails(orderDetails);
+        order.calculateTotal();
+        Order savedOrder = orderRepository.save(order);
+
+        cart.getCartItems().clear();
+        cartRepository.save(cart);
+
+        return savedOrder;
     }
 }
